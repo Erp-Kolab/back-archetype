@@ -1,0 +1,5 @@
+target/generated-sources/openapi/README.md
+target/generated-sources/openapi/src/main/openapi/
+target/generated-sources/.openapi-generator-ignore
+target/**/ModelException.java
+target/**/ApiExceptionDetail.java
