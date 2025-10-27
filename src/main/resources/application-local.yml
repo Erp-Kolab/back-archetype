@@ -1,0 +1,28 @@
+spring:
+  rest-client:
+    currency-exchange-api-v1:
+      url: "https://api1.local"
+
+feign:
+  client:
+    config:
+      currency-exchange-api-v1:
+        connectTimeout: 5000
+        readTimeout: 10000
+
+resilience4j:
+  circuitbreaker:
+    configs:
+        default:
+          registerHealthIndicator: true
+          slidingWindowSize: 30
+          minimumNumberOfCalls: 10
+          permittedNumberOfCallsInHalfOpenState: 10
+          automaticTransitionFromOpenToHalfOpenEnabled: false
+          waitDurationInOpenState: 10s
+          failureRateThreshold: 50
+    instances:
+        currency-exchange:
+            baseConfig: default
+            slidingWindowSize: 50
+            waitDurationInOpenState: PT3S

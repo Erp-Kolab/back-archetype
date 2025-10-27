@@ -1,0 +1,229 @@
+openapi: 3.0.0
+info:
+  title: Currency Exchange Service API
+  description: |
+    The **Currency Exchange Service API** provides real-time currency exchange rate queries for Bank ABC's mobile application. 
+    This microservice enables clients to retrieve daily exchange rates (buy/sell) from official sources while managing consultation limits per user.
+    
+    ## Key Features
+    - Real-time exchange rate queries (USD to PEN)
+    - Rate limiting per customer (DNI-based)
+    - Integration with Peru's official exchange rate source (SUNAT/SBS)
+    - Daily consultation tracking and management
+    
+    ## Rate Limits
+    Each customer is limited to **10 exchange rate queries per day**. The limit resets at midnight (00:00 UTC-5 Peru time).
+  version: 1.0.0
+  contact:
+    name: Bank ABC API Support
+    email: api-support@bancoabc.com.pe
+
+servers:
+  - url: http://127.0.0.1:18080/api/v1
+    description: Local development server
+
+security:
+  - bearerAuth: []
+
+paths:
+  /currency-exchange:
+    get:
+      summary: Get current exchange rate
+      description: |
+        Retrieves the current day's USD/PEN exchange rate for a specific customer identified by DNI.
+        
+        This endpoint validates the customer's daily query limit (max 10 per day) before returning the exchange rate data.
+      operationId: getCurrencyExchange
+      tags:
+        - Exchange Rate
+      parameters:
+        - name: dni
+          in: query
+          description: Customer's Peruvian DNI (Documento Nacional de Identidad)
+          required: true
+          schema:
+            type: string
+            pattern: '^\d{8}$'
+            example: "71756130"
+      responses:
+        '200':
+          description: Successful response with exchange rate data
+          headers:
+            X-RateLimit-Limit:
+              description: Maximum number of queries permitted per day
+              schema:
+                type: integer
+                example: 10
+            X-RateLimit-Remaining:
+              description: Number of queries remaining for the day
+              schema:
+                type: integer
+                example: 7
+            X-RateLimit-Reset:
+              description: Time when the limit resets (ISO 8601 format)
+              schema:
+                type: string
+                format: date-time
+                example: "2025-10-03T00:00:00Z"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrencyExchangeResponse'
+              example:
+                date: "2025-10-01"
+                currency: "USD"
+                buyRate: 3.72
+                sellRate: 3.75
+                source: "SUNAT/SBS"
+        '400':
+          description: Bad Request - Invalid or missing DNI
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidDNI:
+                  value:
+                    error: "Bad Request"
+                    message: "DNI must be 8 digits"
+                missingDNI:
+                  value:
+                    error: "Bad Request"
+                    message: "DNI parameter is required"
+        '401':
+          description: Unauthorized - Invalid or missing authentication token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Unauthorized"
+                message: "Invalid or missing authentication token"
+        '429':
+          description: Too Many Requests - Daily limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RateLimitError'
+              example:
+                error: "Rate Limit Exceeded"
+                message: "Daily consultation limit reached. Maximum 10 queries per day."
+                dni: "71756130"
+                queries_used: 10
+                queries_limit: 10
+                reset_time: "2025-10-03T00:00:00Z"
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Internal Server Error"
+                message: "An unexpected error occurred"
+        '503':
+          description: Service Unavailable - External API unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Service Unavailable"
+                message: "External exchange rate service is temporarily unavailable. Please try again later."
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Bearer token authentication for internal Bank ABC services
+
+  schemas:
+    CurrencyExchangeResponse:
+      type: object
+      required:
+        - date
+        - currency
+        - buyRate
+        - sellRate
+        - source
+      properties:
+        date:
+          type: string
+          format: date
+          description: Date of the exchange rate
+          example: "2025-10-01"
+        currency:
+          type: string
+          description: Currency code
+          example: "USD"
+        buyRate:
+          type: number
+          format: double
+          description: Buy rate (compra) for USD to PEN
+          example: 3.72
+        sellRate:
+          type: number
+          format: double
+          description: Sell rate (venta) for USD to PEN
+          example: 3.75
+        source:
+          type: string
+          description: Source of the exchange rate data
+          example: "SUNAT/SBS"
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error type
+          example: "Bad Request"
+        message:
+          type: string
+          description: Detailed error message
+          example: "DNI must be 8 digits"
+
+    RateLimitError:
+      type: object
+      required:
+        - error
+        - message
+        - dni
+        - queries_used
+        - queries_limit
+        - reset_time
+      properties:
+        error:
+          type: string
+          description: Error type
+          example: "Rate Limit Exceeded"
+        message:
+          type: string
+          description: Detailed error message
+          example: "Daily consultation limit reached. Maximum 10 queries per day."
+        dni:
+          type: string
+          description: Customer's DNI
+          example: "71756130"
+        queries_used:
+          type: integer
+          description: Number of queries used today
+          example: 10
+        queries_limit:
+          type: integer
+          description: Maximum queries allowed per day
+          example: 10
+        reset_time:
+          type: string
+          format: date-time
+          description: Time when the limit resets
+          example: "2025-10-03T00:00:00Z"
+
+tags:
+  - name: Currency Exchange
+    description: Operations related to currency exchange rate queries

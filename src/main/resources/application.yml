@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: Client Archetype
+    version: 1.0.0-SNAPSHOT
+
+server:
+  port: 8080
+  servlet:
+    context-path: /base-path/del-proyecto
+
+springdoc:
+  swagger-ui:
+    enabled: false
+
+info:
+  project:
+    name: ${spring.application.name}
+    version: ${spring.application.version}
