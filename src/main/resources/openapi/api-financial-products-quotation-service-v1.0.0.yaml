@@ -1,0 +1,309 @@
+openapi: 3.0.0
+info:
+  title: Financial Products Quotation Service API
+  description: |
+    El **Servicio de Cotizaciones de Productos Financieros** proporciona cotizaciones en tiempo real 
+    para productos financieros en moneda extranjera del Banco ABC. Este servicio consume internamente 
+    el Currency Exchange Service para convertir montos de USD a PEN.
+    
+    ## Funcionalidades Principales
+    - Cotización de préstamos en dólares con cuotas mensuales en soles
+    - Conversión de saldos de cuentas de ahorro USD a PEN
+    - Conversión de consumos de tarjetas de crédito USD a PEN
+    - Cálculo automático usando tipo de cambio del día
+    
+    ## Flujo de Integración
+    ```
+    Cliente → Servicio de Cotizaciones → Currency Exchange Service → SUNAT/SBS
+    ```
+    
+    ## Consideraciones
+    - Las cotizaciones usan el tipo de cambio del día actual
+    - Para préstamos se usa el **sellRate** (venta)
+    - Para cuentas de ahorro se usa el **buyRate** (compra)
+    - Para tarjetas de crédito se usa el **sellRate** (venta)
+  version: 1.0.0
+  contact:
+    name: Bank ABC Financial Products Team
+    email: products-api@bancoabc.com.pe
+
+servers:
+  - url: http://127.0.0.1:18081/api/v1
+    description: Local development server
+  - url: https://api.bancoabc.com.pe/financial-quotations/v1
+    description: Production server
+
+security:
+  - bearerAuth: [ ]
+
+paths:
+  /quotations/loan:
+    post:
+      summary: Cotizar préstamo en dólares
+      description: |
+        Calcula la cuota mensual en soles para un préstamo solicitado en dólares.
+        
+        Utiliza el tipo de cambio de venta (sellRate) del día para la conversión.
+        Aplica sistema de amortización francés (cuotas fijas).
+      operationId: quoteLoan
+      tags:
+        - Loan Quotations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoanQuotationRequest'
+            example:
+              dni: "71756130"
+              amount_usd: 10000
+              term_months: 24
+              annual_interest_rate: 12.5
+      responses:
+        '200':
+          description: Cotización exitosa
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoanQuotationResponse'
+              example:
+                quotation_id: "QT-LOAN-20251001-001234"
+                customer_dni: "71756130"
+                loan_details:
+                  amount_usd: 10000
+                  amount_pen: 37500
+                  term_months: 24
+                  annual_interest_rate: 12.5
+                  monthly_interest_rate: 1.04
+                monthly_payment:
+                  amount_usd: 470.73
+                  amount_pen: 1765.24
+                total_payment:
+                  amount_usd: 11297.52
+                  amount_pen: 42365.76
+                exchange_rate:
+                  date: "2025-10-01"
+                  sell_rate: 3.75
+                  source: "SUNAT/SBS"
+                quotation_date: "2025-10-01T14:30:00Z"
+                valid_until: "2025-10-01T23:59:59Z"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Bearer token authentication for Bank ABC services
+
+  schemas:
+    LoanQuotationRequest:
+      type: object
+      required:
+        - dni
+        - amount_usd
+        - term_months
+        - annual_interest_rate
+      properties:
+        dni:
+          type: string
+          pattern: '^\d{8}$'
+          description: DNI del cliente
+          example: "71756130"
+        amount_usd:
+          type: number
+          format: double
+          pattern: '^\d+(\.\d{1,2})?$'
+          description: Monto del préstamo en dólares (entre 1000 y 100000)
+          example: "10000"
+        term_months:
+          type: integer
+          pattern: '^\d+$'
+          minimum: 6
+          maximum: 60
+          description: Plazo del préstamo en meses
+          example: 24
+        annual_interest_rate:
+          type: number
+          format: double
+          pattern: '^\d+(\.\d{1,2})?$'
+          minimum: 5.0
+          maximum: 30.0
+          description: Tasa de interés anual (%)
+          example: 12.5
+
+    LoanQuotationResponse:
+      type: object
+      required:
+        - customer_dni
+        - loan_details
+        - monthly_payment
+        - total_payment
+        - exchange_rate
+        - quotation_date
+        - valid_until
+      properties:
+        customer_dni:
+          type: string
+          example: "71756130"
+        loan_details:
+          type: object
+          properties:
+            amount_usd:
+              type: number
+              format: double
+            amount_pen:
+              type: number
+              format: double
+            term_months:
+              type: integer
+            annual_interest_rate:
+              type: number
+              format: double
+            monthly_interest_rate:
+              type: number
+              format: double
+        monthly_payment:
+          type: object
+          properties:
+            amount_usd:
+              type: number
+              format: double
+            amount_pen:
+              type: number
+              format: double
+        total_payment:
+          type: object
+          properties:
+            amount_usd:
+              type: number
+              format: double
+            amount_pen:
+              type: number
+              format: double
+        exchange_rate:
+          $ref: '#/components/schemas/ExchangeRateInfo'
+        quotation_date:
+          type: string
+          format: date-time
+        valid_until:
+          type: string
+          format: date-time
+          description: Fecha límite de validez de la cotización
+
+    ExchangeRateInfo:
+      type: object
+      required:
+        - date
+        - source
+      properties:
+        date:
+          type: string
+          format: date
+          example: "2025-10-01"
+        buy_rate:
+          type: number
+          format: double
+          description: Tipo de cambio compra (usado para cuentas de ahorro)
+          example: 3.72
+        sell_rate:
+          type: number
+          format: double
+          description: Tipo de cambio venta (usado para préstamos y tarjetas)
+          example: 3.75
+        source:
+          type: string
+          example: "SUNAT/SBS"
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Tipo de error
+        message:
+          type: string
+          description: Mensaje detallado del error
+        details:
+          type: object
+          description: Información adicional sobre el error
+
+  responses:
+    BadRequest:
+      description: Solicitud inválida
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "Bad Request"
+            message: "Invalid DNI format"
+            details:
+              field: "dni"
+              provided: "1234"
+              expected: "8 digits"
+
+    Unauthorized:
+      description: No autorizado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "Unauthorized"
+            message: "Invalid or missing authentication token"
+
+    RateLimitExceeded:
+      description: Límite de consultas excedido
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "Rate Limit Exceeded"
+            message: "Customer has exceeded daily exchange rate query limit"
+            details:
+              dni: "71756130"
+              queries_used: 10
+              queries_limit: 10
+              reset_time: "2025-10-03T00:00:00Z"
+
+    InternalError:
+      description: Error interno del servidor
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "Internal Server Error"
+            message: "An unexpected error occurred processing your quotation"
+
+    ServiceUnavailable:
+      description: Servicio no disponible
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "Service Unavailable"
+            message: "Currency Exchange Service is temporarily unavailable"
+            details:
+              dependency: "currency_exchange_service"
+              retry_after: 60
+
+tags:
+  - name: Loan Quotations
+    description: Cotizaciones de préstamos en dólares

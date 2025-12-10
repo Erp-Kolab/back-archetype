@@ -1,0 +1,23 @@
+services:
+  db:
+    image: postgres:latest
+    container_name: postgres
+    hostname: postgres
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    environment:
+      POSTGRES_USER: back-archetype
+      POSTGRES_PASSWORD: back-archetype
+      POSTGRES_DB: financial_products_quotation
+    volumes:
+      - postgresql:/var/lib/postgresql
+      - postgresql-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgresql:
+  postgresql-data:
