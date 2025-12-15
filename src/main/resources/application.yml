@@ -1,9 +1,10 @@
 spring:
   application:
-    name: Back Archetype
+#    name: Back Archetype
+    name: back-archetype
     version: 1.0.0-SNAPSHOT
-  webflux:
-    base-path: /base-path/del-proyecto/api
+#  webflux:
+#    base-path: /base-path/del-proyecto/api
 
 server:
   port: 8080
@@ -12,8 +13,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
-      base-path: /actuator
+        include: health
   endpoint:
     health:
       show-details: always
