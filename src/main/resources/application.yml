@@ -1,10 +1,7 @@
 spring:
   application:
-#    name: Back Archetype
     name: back-archetype
     version: 1.0.0-SNAPSHOT
-#  webflux:
-#    base-path: /base-path/del-proyecto/api
 
 server:
   port: 8080
@@ -17,13 +14,6 @@ management:
   endpoint:
     health:
       show-details: always
-
-springdoc:
-  swagger-ui:
-    enabled: true
-    path: /swagger-ui/index.html
-  api-docs:
-    path: /v3/api-docs
 
 info:
   project:

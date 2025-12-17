@@ -4,7 +4,6 @@ import com.klab.services.backarchetype.exception.WebClientException;
 import com.klab.services.backarchetype.proxy.CurrencyExchangeProxy;
 import com.klab.services.thirdparty.currencyexchange.model.CurrencyExchangeResponse;
 import com.klab.services.thirdparty.currencyexchange.proxy.ExchangeRateApi;
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.jboss.logging.Logger;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -36,7 +35,6 @@ public class CurrencyExchangeProxyImpl implements CurrencyExchangeProxy {
   }
 
   @Override
-  @CircuitBreaker(name = "currency-exchange")
   public Mono<CurrencyExchangeResponse> getCurrencyExchange(String dni) {
     LOGGER.infof("Calling currency exchange API for DNI: %s", dni);
     return exchangeRateApi.getCurrencyExchange(dni)

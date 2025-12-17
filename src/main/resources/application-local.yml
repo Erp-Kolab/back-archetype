@@ -21,21 +21,3 @@ eureka:
     service-url:
       defaultZone: http://localhost:8761/eureka/
       #      defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
-
-
-resilience4j:
-  circuitbreaker:
-    configs:
-        default:
-          registerHealthIndicator: true
-          slidingWindowSize: 30
-          minimumNumberOfCalls: 10
-          permittedNumberOfCallsInHalfOpenState: 10
-          automaticTransitionFromOpenToHalfOpenEnabled: false
-          waitDurationInOpenState: 10s
-          failureRateThreshold: 50
-    instances:
-        currency-exchange:
-            baseConfig: default
-            slidingWindowSize: 50
-            waitDurationInOpenState: PT3S
