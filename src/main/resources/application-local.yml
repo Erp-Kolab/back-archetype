@@ -4,14 +4,14 @@ spring:
       url: "http://127.0.0.1:18080/api/v1"
 
   r2dbc:
-    url: ${DB_URL}
-    username: ${DB_USER}
-    password: ${DB_PASSWORD}
+    url: r2dbc:postgresql://127.0.0.1:5432/financial_products_quotation
+    username: back-archetype
+    password: back-archetype
 
   flyway:
-    url: ${FLYWAY_URL}
-    user: ${FLYWAY_USER}
-    password: ${FLYWAY_PASSWORD}
+    url: jdbc:postgresql://127.0.0.1:5432/financial_products_quotation
+    user: back-archetype
+    password: back-archetype
     locations: classpath:db/migration
     enabled: true
 
