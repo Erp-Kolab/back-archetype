@@ -1,7 +1,9 @@
 spring:
   rest-client:
     currency-exchange-api-v1:
-      url: "http://127.0.0.1:18080/api/v1"
+      url: http://127.0.0.1:18080/api/v1
+      connect-timeout: 2000 # new feature for future
+      read-timeout: 5000 # new feature for future
 
   r2dbc:
     url: r2dbc:postgresql://127.0.0.1:5432/financial_products_quotation
@@ -15,9 +17,44 @@ spring:
     locations: classpath:db/migration
     enabled: true
 
-eureka:
-  client:
-    register-with-eureka: true
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-      #      defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
+  kafka:
+    properties:
+      "[schema.registry.url]": http://localhost:8081
+    producer:
+      topic: audit-log-topic
+      properties:
+        "[bootstrap.servers]": localhost:29092
+        "[key.serializer]": org.apache.kafka.common.serialization.StringSerializer
+        "[value.serializer]": io.confluent.kafka.serializers.KafkaAvroSerializer
+        "[security.protocol]": PLAINTEXT
+        "[auto.register.schemas]": true
+        "[use.latest.version]": true
+
+logging:
+  level:
+    com.klab.services.config: DEBUG
+
+
+#  kafka:
+#    properties:
+#      schema:
+#        registry:
+#          url: http://localhost:8081
+#    producer:
+#      topic: audit-log-topic
+#      properties:
+#        bootstrap:
+#          servers: localhost:29092
+#        key:
+#          serializer: org.apache.kafka.common.serialization.StringSerializer
+#        value:
+#          serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+#        security:
+#          protocol: PLAINTEXT
+#        auto:
+#          register:
+#            schemas: true
+#        use:
+#          latest:
+#            version: true
+

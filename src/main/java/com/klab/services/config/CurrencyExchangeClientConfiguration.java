@@ -15,7 +15,7 @@ import org.springframework.context.annotation.Configuration;
  */
 
 @Configuration
-public class CurrencyExchangeClientConfig {
+public class CurrencyExchangeClientConfiguration {
 
   /**
    * Creates an ExchangeRateApi bean configured with the specified base URL.

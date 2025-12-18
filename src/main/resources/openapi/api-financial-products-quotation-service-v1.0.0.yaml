@@ -67,7 +67,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/LoanQuotationResponse'
               example:
-                quotation_id: "QT-LOAN-20251001-001234"
                 customer_dni: "71756130"
                 loan_details:
                   amount_usd: 10000

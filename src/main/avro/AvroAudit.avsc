@@ -1,0 +1,28 @@
+{
+  "namespace": "com.klab.core.starter.audit.model.avro",
+  "type": "record",
+  "name": "AvroAudit",
+  "fields": [
+    {
+      "name": "eventId",
+      "type": "string"
+    },
+    {
+      "name": "requestDate",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    {
+      "name": "data",
+      "type": {
+        "type": "map",
+        "values": [
+          "string",
+          "null"
+        ]
+      }
+    }
+  ]
+}
